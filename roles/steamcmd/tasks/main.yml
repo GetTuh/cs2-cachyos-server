@@ -1,0 +1,52 @@
+---
+- name: Create steam group
+  ansible.builtin.group:
+    name: steam
+    system: true
+    state: present
+
+- name: Create steam user
+  ansible.builtin.user:
+    name: steam
+    group: steam
+    system: true
+    shell: /bin/bash
+    home: /home/steam
+    create_home: true
+    state: present
+
+- name: Install paru (AUR helper)
+  block:
+    - name: Clone paru source
+      ansible.builtin.git:
+        repo: https://aur.archlinux.org/paru-bin.git
+        dest: /tmp/paru-bin
+        version: HEAD
+
+    - name: Build and install paru
+      ansible.builtin.command:
+        cmd: makepkg -si --noconfirm
+        chdir: /tmp/paru-bin
+        creates: /usr/bin/paru
+      become: true
+      become_user: steam
+  rescue:
+    - name: Check if paru already installed
+      ansible.builtin.command:
+        cmd: which paru
+      changed_when: false
+
+- name: Install steamcmd from AUR
+  ansible.builtin.command:
+    cmd: paru -S --noconfirm steamcmd
+    creates: /usr/lib/steamcmd/steamcmd.sh
+  become: true
+  become_user: steam
+
+- name: Create CS2 install directory
+  ansible.builtin.file:
+    path: /opt/cs2
+    state: directory
+    owner: steam
+    group: steam
+    mode: "0755"

@@ -1,0 +1,130 @@
+---
+- name: Add CachyOS x86-64-v3 repository key
+  ansible.builtin.shell:
+    cmd: |
+      pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com &&
+      pacman-key --lsign-key F3B607488DB35A47
+    creates: /etc/pacman.d/cachyos-v3-signed
+
+- name: Mark v3 repo key as added
+  ansible.builtin.file:
+    path: /etc/pacman.d/cachyos-v3-signed
+    state: touch
+    modification_time: preserve
+    access_time: preserve
+
+- name: Add CachyOS v3 pacman repos
+  ansible.builtin.blockinfile:
+    path: /etc/pacman.conf
+    marker: "# {mark} ANSIBLE MANAGED CACHYOS V3 REPOS"
+    insertbefore: "^\\[core\\]"
+    block: |
+      [cachyos-v3]
+      Include = /etc/pacman.d/cachyos-mirrorlist
+      [cachyos-core-v3]
+      Include = /etc/pacman.d/cachyos-mirrorlist
+      [cachyos-extra-v3]
+      Include = /etc/pacman.d/cachyos-mirrorlist
+
+- name: Install linux-cachyos-server kernel
+  community.general.pacman:
+    name:
+      - linux-cachyos-server
+      - linux-cachyos-server-headers
+    state: present
+    update_cache: true
+
+- name: Remove default linux kernel
+  community.general.pacman:
+    name:
+      - linux
+      - linux-headers
+    state: absent
+
+- name: Install base tooling
+  community.general.pacman:
+    name:
+      - base-devel
+      - git
+      - zram-generator
+      - htop
+      - iotop
+    state: present
+
+- name: Read current kernel cmdline for root parameter
+  ansible.builtin.slurp:
+    src: /proc/cmdline
+  register: proc_cmdline
+
+- name: Extract root= parameter from current cmdline
+  ansible.builtin.set_fact:
+    current_root_param: "{{ (proc_cmdline.content | b64decode).split() | select('match', '^root=') | list | first | default('root=/dev/sda1') }}"
+
+- name: Set kernel cmdline parameters
+  ansible.builtin.copy:
+    dest: /etc/kernel/cmdline
+    content: "{{ current_root_param }} rw mitigations=off nowatchdog nohz_full=0-3 rcu_nocbs=0-3 transparent_hugepage=never\n"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Regenerate unified kernel image
+
+- name: Set CPU governor to performance via udev
+  ansible.builtin.copy:
+    dest: /etc/udev/rules.d/99-cpu-governor.rules
+    content: |
+      SUBSYSTEM=="cpu", ACTION=="add|change", KERNEL=="cpu[0-9]*", ATTR{cpufreq/scaling_governor}="performance"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload udev rules
+
+- name: Apply sysctl tuning
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    sysctl_file: /etc/sysctl.d/99-cs2-tune.conf
+    reload: true
+  loop:
+    - { key: vm.swappiness, value: "10" }
+    - { key: net.core.default_qdisc, value: fq }
+    - { key: net.ipv4.tcp_congestion_control, value: bbr }
+    - { key: net.core.rmem_max, value: "134217728" }
+    - { key: net.core.wmem_max, value: "134217728" }
+    - { key: net.core.netdev_max_backlog, value: "250000" }
+    - { key: net.ipv4.tcp_rmem, value: "4096 87380 134217728" }
+    - { key: net.ipv4.tcp_wmem, value: "4096 65536 134217728" }
+    - { key: net.ipv4.udp_rmem_min, value: "8192" }
+    - { key: net.ipv4.udp_wmem_min, value: "8192" }
+    - { key: kernel.sched_autogroup_enabled, value: "0" }
+
+- name: Configure zram
+  ansible.builtin.copy:
+    dest: /etc/systemd/zram-generator.conf
+    content: |
+      [zram0]
+      zram-size = ram / 2
+      compression-algorithm = zstd
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Disable unnecessary services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: false
+    state: stopped
+  loop:
+    - cups
+    - ModemManager
+    - lvm2-monitor
+    - bluetooth
+  ignore_errors: true
+
+- name: Enable systemd-zram-setup
+  ansible.builtin.systemd:
+    name: systemd-zram-setup@zram0.service
+    enabled: true
+    state: started
+

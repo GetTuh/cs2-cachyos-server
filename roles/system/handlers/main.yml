@@ -1,0 +1,10 @@
+---
+- name: Regenerate unified kernel image
+  ansible.builtin.command:
+    cmd: reinstall-kernels
+  listen: Regenerate unified kernel image
+
+- name: Reload udev rules
+  ansible.builtin.command:
+    cmd: udevadm control --reload-rules
+  listen: Reload udev rules

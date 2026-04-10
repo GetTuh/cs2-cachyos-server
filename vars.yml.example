@@ -1,0 +1,6 @@
+---
+cs2_hostname: "CachyOS CS2 LAN Server"
+cs2_maxplayers: 16
+cs2_map: de_dust2
+cs2_password: ""
+cs2_gamemode: competitive

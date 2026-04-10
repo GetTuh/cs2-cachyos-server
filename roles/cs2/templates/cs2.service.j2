@@ -1,0 +1,31 @@
+[Unit]
+Description=Counter-Strike 2 Dedicated Server
+After=network.target
+
+[Service]
+Type=simple
+User=steam
+Group=steam
+WorkingDirectory=/opt/cs2
+Environment="CS2_LAN=1"
+ExecStart=/opt/cs2/game/bin/linuxsteamrt64/cs2 \
+    -dedicated \
+    -console \
+    -usercon \
+    -maxplayers {{ cs2_maxplayers }} \
+    +map {{ cs2_map }} \
+    +game_type {{ '0' if cs2_gamemode == 'competitive' else '1' }} \
+    +game_mode {{ '1' if cs2_gamemode == 'competitive' else '0' }} \
+    +sv_lan 1 \
+    +exec server.cfg
+Restart=always
+RestartSec=10
+Nice=-10
+LimitNOFILE=1000000
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cs2
+
+[Install]
+WantedBy=multi-user.target

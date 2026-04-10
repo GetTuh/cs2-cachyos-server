@@ -1,0 +1,11 @@
+---
+- name: Deploy CS2 dedicated server on CachyOS
+  hosts: cs2_servers
+  become: true
+  vars_files:
+    - vars.yml
+
+  roles:
+    - system
+    - steamcmd
+    - cs2

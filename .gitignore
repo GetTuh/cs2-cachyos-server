@@ -1,0 +1,6 @@
+vars.yml
+*.retry
+.ansible/
+__pycache__/
+*.pyc
+.env

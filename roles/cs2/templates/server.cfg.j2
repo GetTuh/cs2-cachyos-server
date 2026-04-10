@@ -1,0 +1,25 @@
+hostname "{{ cs2_hostname }}"
+maxplayers {{ cs2_maxplayers }}
+{% if cs2_password %}
+sv_password "{{ cs2_password }}"
+{% else %}
+sv_password ""
+{% endif %}
+
+sv_lan 1
+sv_cheats 0
+
+mp_autoteambalance 1
+mp_limitteams 1
+
+fps_max 0
+sv_minrate 0
+sv_maxrate 0
+sv_mincmdrate 64
+sv_maxcmdrate 128
+sv_minupdaterate 64
+sv_maxupdaterate 128
+
+log on
+sv_logecho 1
+sv_logfile 1

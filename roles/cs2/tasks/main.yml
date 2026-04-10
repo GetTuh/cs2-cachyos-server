@@ -1,0 +1,60 @@
+---
+- name: Download and install CS2 via steamcmd
+  ansible.builtin.command:
+    cmd: >
+      /usr/lib/steamcmd/steamcmd.sh
+      +force_install_dir /opt/cs2
+      +login anonymous
+      +app_update 730 validate
+      +quit
+    creates: /opt/cs2/game/bin/linuxsteamrt64/cs2
+  become: true
+  become_user: steam
+
+- name: Fix CS2 directory ownership
+  ansible.builtin.file:
+    path: /opt/cs2
+    owner: steam
+    group: steam
+    recurse: true
+
+- name: Deploy server.cfg
+  ansible.builtin.template:
+    src: server.cfg.j2
+    dest: /opt/cs2/game/csgo/cfg/server.cfg
+    owner: steam
+    group: steam
+    mode: "0644"
+
+- name: Deploy benchmark config
+  ansible.builtin.copy:
+    dest: /opt/cs2/game/csgo/cfg/benchmark.cfg
+    owner: steam
+    group: steam
+    mode: "0644"
+    content: |
+      sv_cheats 1
+      sv_stressbots 1
+      bot_quota 16
+      bot_quota_mode fill
+      bot_difficulty 0
+      fps_max 0
+      net_graph 1
+
+- name: Deploy CS2 systemd service
+  ansible.builtin.template:
+    src: cs2.service.j2
+    dest: /etc/systemd/system/cs2.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Restart cs2
+
+- name: Enable and start CS2 service
+  ansible.builtin.systemd:
+    name: cs2
+    enabled: true
+    state: started
+    daemon_reload: true
