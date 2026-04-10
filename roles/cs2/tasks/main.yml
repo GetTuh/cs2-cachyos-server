@@ -2,7 +2,7 @@
 - name: Download and install CS2 via steamcmd
   ansible.builtin.command:
     cmd: >
-      /usr/lib/steamcmd/steamcmd.sh
+      /home/steam/steamcmd/steamcmd.sh
       +force_install_dir /opt/cs2
       +login anonymous
       +app_update 730 validate

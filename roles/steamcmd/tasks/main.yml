@@ -15,17 +15,31 @@
     create_home: true
     state: present
 
-- name: Install yay
+- name: Install steamcmd dependencies
   community.general.pacman:
-    name: yay
+    name:
+      - lib32-gcc-libs
+      - lib32-sdl2
+      - lib32-dbus
+      - curl
     state: present
 
-- name: Install steamcmd from AUR
-  ansible.builtin.command:
-    cmd: yay -S --noconfirm --needed steamcmd
-    creates: /usr/lib/steamcmd/steamcmd.sh
-  become: true
-  become_user: steam
+- name: Create steamcmd directory
+  ansible.builtin.file:
+    path: /home/steam/steamcmd
+    state: directory
+    owner: steam
+    group: steam
+    mode: "0755"
+
+- name: Download and extract steamcmd
+  ansible.builtin.unarchive:
+    src: https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz
+    dest: /home/steam/steamcmd
+    remote_src: true
+    owner: steam
+    group: steam
+    creates: /home/steam/steamcmd/steamcmd.sh
 
 - name: Create CS2 install directory
   ansible.builtin.file:
