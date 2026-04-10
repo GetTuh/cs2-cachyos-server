@@ -70,6 +70,21 @@ journalctl -u cs2 -f
 systemctl restart cs2
 ```
 
+## Updating CS2
+
+The playbook deploys a `cs2update` script to `/usr/local/bin`. Run it as root:
+
+```bash
+cs2update
+```
+
+```bash
+cs2update   # update only (faster)
+cs2validate # update + validate file integrity
+```
+
+Both stop the service, run steamcmd, then start the server back up.
+
 ## Notes
 
 - No GSLT token required — `sv_lan 1` keeps the server LAN-only.

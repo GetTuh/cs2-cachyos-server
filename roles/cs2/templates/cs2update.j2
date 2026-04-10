@@ -1,0 +1,17 @@
+#!/bin/bash
+set -euo pipefail
+
+echo "==> Stopping cs2 service..."
+systemctl stop cs2
+
+echo "==> Updating CS2 via steamcmd..."
+sudo -u steam /home/steam/steamcmd/steamcmd.sh \
+    +force_install_dir /opt/cs2 \
+    +login anonymous \
+    +app_update 730 \
+    +quit
+
+echo "==> Starting cs2 service..."
+systemctl start cs2
+
+echo "==> Done. Server is back up."

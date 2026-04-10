@@ -68,6 +68,22 @@
     - Reload systemd
     - Restart cs2
 
+- name: Deploy cs2update script
+  ansible.builtin.template:
+    src: cs2update.j2
+    dest: /usr/local/bin/cs2update
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy cs2validate script
+  ansible.builtin.template:
+    src: cs2validate.j2
+    dest: /usr/local/bin/cs2validate
+    owner: root
+    group: root
+    mode: "0755"
+
 - name: Enable and start CS2 service
   ansible.builtin.systemd:
     name: cs2
