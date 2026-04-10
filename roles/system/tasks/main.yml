@@ -1,17 +1,10 @@
 ---
-- name: Add CachyOS x86-64-v3 repository key
-  ansible.builtin.shell:
-    cmd: |
-      pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com &&
-      pacman-key --lsign-key F3B607488DB35A47
-    creates: /etc/pacman.d/cachyos-v3-signed
-
-- name: Mark v3 repo key as added
-  ansible.builtin.file:
-    path: /etc/pacman.d/cachyos-v3-signed
-    state: touch
-    modification_time: preserve
-    access_time: preserve
+- name: Check if CachyOS v3 repos already present in pacman.conf
+  ansible.builtin.command:
+    cmd: grep -q '^\[cachyos-v3\]' /etc/pacman.conf
+  register: cachyos_v3_present
+  changed_when: false
+  failed_when: false
 
 - name: Add CachyOS v3 pacman repos
   ansible.builtin.blockinfile:
@@ -25,6 +18,7 @@
       Include = /etc/pacman.d/cachyos-mirrorlist
       [cachyos-extra-v3]
       Include = /etc/pacman.d/cachyos-mirrorlist
+  when: cachyos_v3_present.rc != 0
 
 - name: Install linux-cachyos-server kernel
   community.general.pacman:

@@ -30,7 +30,7 @@ ansible-galaxy collection install -r requirements.yml
 cp vars.yml.example vars.yml
 $EDITOR vars.yml
 
-ansible-playbook -i inventory.ini playbook.yml
+ansible-playbook -i inventory.ini  -K playbook.yml
 ```
 
 The playbook is fully idempotent — re-running is safe.

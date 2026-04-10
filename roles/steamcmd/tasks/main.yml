@@ -15,30 +15,14 @@
     create_home: true
     state: present
 
-- name: Install paru (AUR helper)
-  block:
-    - name: Clone paru source
-      ansible.builtin.git:
-        repo: https://aur.archlinux.org/paru-bin.git
-        dest: /tmp/paru-bin
-        version: HEAD
-
-    - name: Build and install paru
-      ansible.builtin.command:
-        cmd: makepkg -si --noconfirm
-        chdir: /tmp/paru-bin
-        creates: /usr/bin/paru
-      become: true
-      become_user: steam
-  rescue:
-    - name: Check if paru already installed
-      ansible.builtin.command:
-        cmd: which paru
-      changed_when: false
+- name: Install yay
+  community.general.pacman:
+    name: yay
+    state: present
 
 - name: Install steamcmd from AUR
   ansible.builtin.command:
-    cmd: paru -S --noconfirm steamcmd
+    cmd: yay -S --noconfirm --needed steamcmd
     creates: /usr/lib/steamcmd/steamcmd.sh
   become: true
   become_user: steam
