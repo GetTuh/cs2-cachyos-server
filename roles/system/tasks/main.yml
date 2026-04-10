@@ -1,25 +1,4 @@
 ---
-- name: Check if CachyOS v3 repos already present in pacman.conf
-  ansible.builtin.command:
-    cmd: grep -q '^\[cachyos-v3\]' /etc/pacman.conf
-  register: cachyos_v3_present
-  changed_when: false
-  failed_when: false
-
-- name: Add CachyOS v3 pacman repos
-  ansible.builtin.blockinfile:
-    path: /etc/pacman.conf
-    marker: "# {mark} ANSIBLE MANAGED CACHYOS V3 REPOS"
-    insertbefore: "^\\[core\\]"
-    block: |
-      [cachyos-v3]
-      Include = /etc/pacman.d/cachyos-mirrorlist
-      [cachyos-core-v3]
-      Include = /etc/pacman.d/cachyos-mirrorlist
-      [cachyos-extra-v3]
-      Include = /etc/pacman.d/cachyos-mirrorlist
-  when: cachyos_v3_present.rc != 0
-
 - name: Install linux-cachyos-server kernel
   community.general.pacman:
     name:
